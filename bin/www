@@ -1,0 +1,50 @@
+//var http = require('http');
+//
+//var server = http.createServer(function(req,res){
+//  res.writeHead(200);
+//  res.end('Hello Http World 1234!');
+//});
+//
+//server.listen(8080);
+
+var RtmClient = require('@slack/client').RtmClient;
+var CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS;
+var RTM_EVENTS = require('@slack/client').RTM_EVENTS;
+var RTM_CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS.RTM;
+var channels = require('../lib/constants/channels').CarbonFiveChannels;
+
+var token = process.env.BUZZKILLFEED_SLACKBOT_TOKEN || '';
+
+var rtm = new RtmClient(token, {logLevel: 'debug'});
+
+console.log('token', token);
+rtm.start();
+
+
+rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
+
+});
+
+
+rtm.on(RTM_EVENTS.MESSAGE, function (response) {
+   //Listens to all `message` events from the team
+  var channel = '2345kdsjksj';
+  rtm.sendMessage('Are you talking to me?  I\'m kinda stupid right now.', channel.id);
+});
+
+//rtm.on(RTM_EVENTS.CHANNEL_CREATED, function (message) {
+  // Listens to all `channel_created` events from the team
+//});
+
+
+// you need to wait for the client to fully connect before you can send messages
+rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function (rtmData) {
+  // This will send the message 'this is a test message' to the channel identified by id 'C0CHZA86Q'
+  var testChannelID = channels['blurp']['id'];
+  console.log("testChannelID = ", testChannelID);
+  rtm.sendMessage("Hi! I'm Buzz Killfeed!", testChannelID, function messageSent(errorResponse) {
+    if (errorResponse) {
+      console.log(errorResponse);
+    }
+  });
+});
