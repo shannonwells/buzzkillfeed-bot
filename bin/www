@@ -16,20 +16,41 @@ var channels = require('../lib/constants/channels').CarbonFiveChannels;
 var token = process.env.BUZZKILLFEED_SLACKBOT_TOKEN || '';
 
 var rtm = new RtmClient(token, {logLevel: 'debug'});
+var myId = 'U11N8LMAM';
 
 console.log('token', token);
 rtm.start();
 
 
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
-
+  myId = rtmStartData['self']['id'];
 });
 
 
-rtm.on(RTM_EVENTS.MESSAGE, function (response) {
+//{
+//  type: 'message',
+//  channel: 'C0NHJ7Y76',
+//  user: 'U0HLVPL0H',
+//  text: 'what?',
+//  ts: '1461198104.000003',
+//  team: 'T024G6B3K'
+// }
+
+rtm.on(RTM_EVENTS.MESSAGE, function (rtmData) {
    //Listens to all `message` events from the team
-  var channel = '2345kdsjksj';
-  rtm.sendMessage('Are you talking to me?  I\'m kinda stupid right now.', channel.id);
+  var channelId = rtmData['channel'];
+  console.log("data: ==============> > > > > ", rtmData);
+  var atMeRegExp = new RegExp(myId);
+
+  if (rtmData.text.match(atMeRegExp)) {
+    if (rtmData.text.match(/clickbait/, 'i')) {
+      rtm.sendMessage('So you want me to generate a funny headline?', channelId);
+    } else {
+      rtm.sendMessage('Huh?', channelId);
+    }
+  } else if ( rtmData.text.match(/buzzkillfeed/, 'i') ) {
+    rtm.sendMessage('Are you talking about me?  I\'m kinda stupid right now.', channelId);
+  }
 });
 
 //rtm.on(RTM_EVENTS.CHANNEL_CREATED, function (message) {
@@ -41,7 +62,6 @@ rtm.on(RTM_EVENTS.MESSAGE, function (response) {
 rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function (rtmData) {
   // This will send the message 'this is a test message' to the channel identified by id 'C0CHZA86Q'
   var testChannelID = channels['blurp']['id'];
-  console.log("testChannelID = ", testChannelID);
   rtm.sendMessage("Hi! I'm Buzz Killfeed!", testChannelID, function messageSent(errorResponse) {
     if (errorResponse) {
       console.log(errorResponse);
