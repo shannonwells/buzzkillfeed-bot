@@ -8,6 +8,6 @@
   "dependencies": {
     "@slack/client": "^2.3.0",
     "debug": "~2.2.0",
-    "express": "~4.13.1",
+    "express": "~4.13.1"
   }
 }

@@ -1,4 +1,4 @@
-//var http = require('http');
+var https = require('https');
 //
 //var server = http.createServer(function(req,res){
 //  res.writeHead(200);
@@ -14,16 +14,15 @@ var RTM_CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS.RTM;
 var channels = require('../lib/constants/channels').CarbonFiveChannels;
 
 var token = process.env.BUZZKILLFEED_SLACKBOT_TOKEN || '';
+var ClickbaitGeneratorUrl = process.env.CLICKBAIT_GENERATOR_URL || '';
 
-var rtm = new RtmClient(token, {logLevel: 'debug'});
+var rtm = new RtmClient(token, {logLevel: 'warn'});
 var myId = 'U11N8LMAM';
 
-console.log('token', token);
 rtm.start();
 
-
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
-  myId = rtmStartData['self']['id'];
+    myId = rtmStartData['self']['id'];
 });
 
 
@@ -37,34 +36,48 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
 // }
 
 rtm.on(RTM_EVENTS.MESSAGE, function (rtmData) {
-   //Listens to all `message` events from the team
-  var channelId = rtmData['channel'];
-  console.log("data: ==============> > > > > ", rtmData);
-  var atMeRegExp = new RegExp(myId);
+    //Listens to all `message` events from the team
+    var channelId = rtmData['channel'];
+    // console.log("\n\n\ndata: ==============> > > > > ", rtmData);
+    var atMeRegExp = new RegExp(myId);
 
-  if (rtmData.text.match(atMeRegExp)) {
-    if (rtmData.text.match(/clickbait/, 'i')) {
-      rtm.sendMessage('So you want me to generate a funny headline?', channelId);
-    } else {
-      rtm.sendMessage('Huh?', channelId);
+    if (rtmData.text.match(atMeRegExp)) {
+        if (rtmData.text.match(/clickbait/, 'i')) {
+            var params = '?headline_type=listicle';
+
+            var requestUrl = [ClickbaitGeneratorUrl,
+                '/slackbot/generate',
+                params].join('');
+
+            https.get(requestUrl, function (response) {
+                var body = '';
+                response.on('data', function(d) {
+                    body += d;
+                }).on('end', function() {
+                    rtm.sendMessage(body, channelId);
+                })
+            });
+
+        } else {
+            rtm.sendMessage('Huh?', channelId);
+        }
+    } else if (rtmData.text.match(/buzzkillfeed/, 'i')) {
+        rtm.sendMessage('Are you talking about me?  I\'m kinda stupid right now.', channelId);
     }
-  } else if ( rtmData.text.match(/buzzkillfeed/, 'i') ) {
-    rtm.sendMessage('Are you talking about me?  I\'m kinda stupid right now.', channelId);
-  }
 });
 
 //rtm.on(RTM_EVENTS.CHANNEL_CREATED, function (message) {
-  // Listens to all `channel_created` events from the team
+// Listens to all `channel_created` events from the team
 //});
 
 
 // you need to wait for the client to fully connect before you can send messages
 rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function (rtmData) {
-  // This will send the message 'this is a test message' to the channel identified by id 'C0CHZA86Q'
-  var testChannelID = channels['blurp']['id'];
-  rtm.sendMessage("Hi! I'm Buzz Killfeed!", testChannelID, function messageSent(errorResponse) {
-    if (errorResponse) {
-      console.log(errorResponse);
-    }
-  });
+    // This will send the message 'this is a test message' to the channel identified by id 'C0CHZA86Q'
+    var testChannelID = channels['blurp']['id'];
+    // rtm.sendMessage("Hi! I'm Buzz Killfeed!", testChannelID, function messageSent(errorResponse) {
+    //     if (errorResponse) {
+    //         console.log(errorResponse);
+    //     }
+    // });
 });
