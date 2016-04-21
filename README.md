@@ -1,4 +1,4 @@
-!["Buzz Killfeed Logo"](https://github.com/shannonwells/buzzkillfeed/blob/master/assets/buzzkillfeed-icon.png )
+!["Buzz Killfeed Logo"](https://github.com/shannonwells/buzzkillfeed/blob/master/assets/buzzkillfeed-icon-sm.png )
 
 Buzz Killfeed
 
