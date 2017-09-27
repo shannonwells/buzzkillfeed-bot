@@ -11,7 +11,7 @@ var RtmClient = require('@slack/client').RtmClient;
 var CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS;
 var RTM_EVENTS = require('@slack/client').RTM_EVENTS;
 var RTM_CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS.RTM;
-var channels = require('../lib/constants/channels').CarbonFiveChannels;
+var channels = require('../lib/constants/channels').MyChannels;
 
 var token = process.env.BUZZKILLFEED_SLACKBOT_TOKEN || '';
 var ClickbaitGeneratorUrl = process.env.CLICKBAIT_GENERATOR_URL || '';
