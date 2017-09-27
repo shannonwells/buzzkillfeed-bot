@@ -15,6 +15,4 @@ A Slackbot for Clickbait Generator written for Node.js.  It uses the node-slack-
 1. ```npm install```
 1. ```node bin/www```
 1. To debug, change 'warn' to 'debug'
-1. Talk to or about your bot:
-
-!["screenshot"](https://farm2.staticflickr.com/1609/25948610514_a3699de480_z.jpg)
+1. Talk to or about your bot
