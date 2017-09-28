@@ -12,6 +12,7 @@ A Slackbot for Clickbait Generator written for Node.js.  It uses the node-slack-
 1. Clone this repo
 1. Set BUZZKILLFEED_SLACKBOT_TOKEN to the above API token.
 1. Set CLICKBAIT_GENERATOR_URL - which might be mine, or it might be your own Clickbait Generator hack/fork/blatant-ripoff.
+1. Set CHANNEL_NAMES - a comma separated list of channel names on which we should respond
 1. ```npm install```
 1. ```node bin/www```
 1. To debug, change 'warn' to 'debug'
