@@ -1,4 +1,6 @@
 var https = require('https');
+var http = require('http');
+var _ = require('lodash');
 //
 //var server = http.createServer(function(req,res){
 //  res.writeHead(200);
@@ -14,15 +16,29 @@ var RTM_CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS.RTM;
 var channels = require('../lib/constants/channels').MyChannels;
 
 var token = process.env.BUZZKILLFEED_SLACKBOT_TOKEN || '';
+var channelNames = (process.env.CHANNEL_NAMES || 'blurp').split(",");
 var ClickbaitGeneratorUrl = process.env.CLICKBAIT_GENERATOR_URL || '';
 
 var rtm = new RtmClient(token, {logLevel: 'warn'});
-var myId = 'U11N8LMAM';
+var myId;
+var myName;
+let channelIds = [];
 
+console.log("Starting with ", token, channelNames);
 rtm.start();
 
+
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
-    myId = rtmStartData['self']['id'];
+  myId = rtmStartData.self.id;
+  myName = rtmStartData.self.name;
+  console.log(`Logged in as ${myName} of team ${rtmStartData.team.name}, but not yet connected to a channel`);
+
+  for (const c of rtmStartData.channels) {
+    if (c.is_member && _.includes(channelNames, c.name)) {
+      channelIds.push(c.id)
+    }
+  }
+  console.log("Listening on channels ", channelIds);
 });
 
 
@@ -36,33 +52,33 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
 // }
 
 rtm.on(RTM_EVENTS.MESSAGE, function (rtmData) {
-    //Listens to all `message` events from the team
-    var channelId = rtmData['channel'];
-    var atMeRegExp = new RegExp(myId);
+  //Listens to all `message` events from the team
+  var channelId = rtmData['channel'];
+  var atMeRegExp = new RegExp(myName);
+  console.log("GO", channelId)
+  if (rtmData.text.match(atMeRegExp)) {
+    if (rtmData.text.match(/clickbait/, 'i')) {
+      var params = '?headline_type=listicle';
 
-    if (rtmData.text.match(atMeRegExp)) {
-        if (rtmData.text.match(/clickbait/, 'i')) {
-            var params = '?headline_type=listicle';
+      var requestUrl = [ClickbaitGeneratorUrl,
+                        '/slackbot/generate',
+                        params].join('');
 
-            var requestUrl = [ClickbaitGeneratorUrl,
-                '/slackbot/generate',
-                params].join('');
+      http.get(requestUrl, function (response) {
+        var body = '';
+        response.on('data', function(d) {
+          body += d;
+        }).on('end', function() {
+          rtm.sendMessage(body, channelId);
+        })
+      });
 
-            https.get(requestUrl, function (response) {
-                var body = '';
-                response.on('data', function(d) {
-                    body += d;
-                }).on('end', function() {
-                    rtm.sendMessage(body, channelId);
-                })
-            });
-
-        } else {
-            rtm.sendMessage('Huh?', channelId);
-        }
-    } else if (rtmData.text.match(/buzzkillfeed/, 'i')) {
-        rtm.sendMessage('Are you talking about me?  I\'m kinda stupid right now.', channelId);
+    } else {
+      rtm.sendMessage('Huh?', channelId);
     }
+  } else if (rtmData.text.match(new RegExp(myName, 'i'))) {
+    rtm.sendMessage('Are you talking about me?  I\'m kinda stupid right now.', channelId);
+  }
 });
 
 //rtm.on(RTM_EVENTS.CHANNEL_CREATED, function (message) {
@@ -72,10 +88,12 @@ rtm.on(RTM_EVENTS.MESSAGE, function (rtmData) {
 
 // you need to wait for the client to fully connect before you can send messages
 rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function (rtmData) {
-    var testChannelID = channels['blurp']['id'];
-    rtm.sendMessage("Buzz Killfeed to the Rescue!", testChannelID, function messageSent(errorResponse) {
-        if (errorResponse) {
-            console.log(errorResponse);
-        }
+  //var testChannelID = channels[channelName]['id'];
+  for(channel in channelIds) {
+    rtm.sendMessage("Buzz Killfeed to the Rescue!", channel, function messageSent(errorResponse) {
+      if (errorResponse) {
+        console.log(errorResponse);
+      }
     });
+  }
 });
