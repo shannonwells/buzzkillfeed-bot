@@ -16,17 +16,18 @@ var RTM_CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS.RTM;
 var channels = require('../lib/constants/channels').MyChannels;
 
 var token = process.env.BUZZKILLFEED_SLACKBOT_TOKEN || '';
-var channelNames = (process.env.CHANNEL_NAMES || 'blurp').split(",");
+var channelNames = (process.env.CHANNEL_NAMES || '').split(/\s+/);
 var ClickbaitGeneratorUrl = process.env.CLICKBAIT_GENERATOR_URL || '';
+var HEADLINE_TYPES = ['whathappens','listicle','watchas','dontwanna'];
 
 var rtm = new RtmClient(token, {logLevel: 'warn'});
 var myId;
 var myName;
 let channelIds = [];
 
-console.log("Starting with ", token, channelNames);
+console.log("Starting Slackbot with token ", token);
+console.log("Planning to listen on ", channelNames);
 rtm.start();
-
 
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
   myId = rtmStartData.self.id;
@@ -41,7 +42,6 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
   console.log("Listening on channels ", channelIds);
 });
 
-
 //{
 //  type: 'message',
 //  channel: 'C0NHJ7Y76',
@@ -54,11 +54,23 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
 rtm.on(RTM_EVENTS.MESSAGE, function (rtmData) {
   //Listens to all `message` events from the team
   var channelId = rtmData['channel'];
-  var atMeRegExp = new RegExp(myName);
-  console.log("GO", channelId)
-  if (rtmData.text.match(atMeRegExp)) {
-    if (rtmData.text.match(/clickbait/, 'i')) {
-      var params = '?headline_type=listicle';
+  var atMeRegExp = new RegExp(myId);
+  var message = rtmData.text;
+
+  if (!message) {
+    // when a message is edited we get empty message here
+    return;
+  }
+
+  var isDirectMessage = message.match(atMeRegExp);
+  var clickBait = message.match(/clickbait/, 'i');
+  var typesRegExp = new RegExp("(" + HEADLINE_TYPES.join("|") + ")", "i");
+  var clickBaitType = message.match(typesRegExp);
+
+  if (isDirectMessage) {
+    if (clickBait) {
+      var type = (clickBaitType && clickBaitType[0]) || 'listicle';
+      var params = '?headline_type=' + type;
 
       var requestUrl = [ClickbaitGeneratorUrl,
                         '/slackbot/generate',
@@ -72,7 +84,6 @@ rtm.on(RTM_EVENTS.MESSAGE, function (rtmData) {
           rtm.sendMessage(body, channelId);
         })
       });
-
     } else {
       rtm.sendMessage('Huh?', channelId);
     }
@@ -87,13 +98,12 @@ rtm.on(RTM_EVENTS.MESSAGE, function (rtmData) {
 
 
 // you need to wait for the client to fully connect before you can send messages
-rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function (rtmData) {
-  //var testChannelID = channels[channelName]['id'];
-  for(channel in channelIds) {
-    rtm.sendMessage("Buzz Killfeed to the Rescue!", channel, function messageSent(errorResponse) {
-      if (errorResponse) {
-        console.log(errorResponse);
-      }
-    });
-  }
-});
+//
+// This thing complains a lot so i'm commenting it out.  related bug at
+// https://github.com/slackapi/node-slack-sdk/issues/251
+// rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function (rtmData) {
+//   //var testChannelID = channels[channelName]['id'];
+//   for(var channel in channelIds) {
+//     rtm.sendMessage("Buzz Killfeed to the Rescue!", channel);
+//   }
+// });
